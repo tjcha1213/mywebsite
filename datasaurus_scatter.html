@@ -2,23 +2,81 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Datasaurus scatterplot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Datasaurus scatterplot</title>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 0; padding: 1.5rem; background: #f9fafb; color: #0f172a; }
-    .container { max-width: 1100px; margin: 0 auto; }
-    h1 { font-size: 1.9rem; margin-bottom: 0.35rem; }
-    .chart-wrapper { position: relative; height: 60vh; min-height: 420px; border: 1px solid #d1d5db; border-radius: 12px; padding: 1rem; background: #fff; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08); }
-    .chart-caption { margin-top: 0.65rem; color: #475569; font-size: 0.95rem; }
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --line: #cbd5e1;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 1.25rem;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top right, #e0f2fe 0%, var(--bg) 45%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.8rem;
+      letter-spacing: 0.01em;
+    }
+    p {
+      margin: 0 0 1rem;
+      color: var(--muted);
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.9rem;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+    #plot {
+      width: 100%;
+      height: auto;
+      display: block;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #ffffff;
+    }
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.45rem 0.75rem;
+      margin-top: 0.8rem;
+      font-size: 0.82rem;
+      color: #1e293b;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-width: 0;
+    }
+    .swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <div class="container">
+  <div class="wrap">
     <h1>Datasaurus scatterplot</h1>
-    <p class="chart-caption">Each color corresponds to a shape from <code>datasaurus_all.csv</code>. Hover to inspect each point.</p>
-    <div class="chart-wrapper">
-      <canvas id="scatterChart"></canvas>
+    <p>Offline rendering from <code>datasaurus_all.csv</code>. Every color is a distinct shape.</p>
+    <div class="panel">
+      <canvas id="plot" width="1024" height="640" aria-label="Datasaurus scatterplot"></canvas>
+      <div class="legend" id="legend"></div>
     </div>
   </div>
 
@@ -1869,68 +1927,118 @@ ID,shape,x,y
 1843,wide_lines,75.62725502,37.12875195
 1844,wide_lines,40.61012542,89.13623987
 1845,wide_lines,39.11436645,96.48175132
-1846,wide_lines,34.58382893,89.58890199
-  </script>
+1846,wide_lines,34.58382893,89.58890199  </script>
 
   <script>
-    const csvText = document.getElementById('datasaurus-data').textContent.trim();
-    const rows = csvText.split('
-').slice(1);
-    const dataByShape = {};
-    const xValues = [];
-    const yValues = [];
+    const csvText = document.getElementById("datasaurus-data").textContent.trim();
+    const rows = csvText.split("\n").slice(1);
+    const grouped = new Map();
 
-    rows.forEach(line => {
-      if (!line.trim()) return;
-      const [id, shape, x, y] = line.split(',');
-      const xNum = parseFloat(x);
-      const yNum = parseFloat(y);
-      if (!dataByShape[shape]) {
-        dataByShape[shape] = [];
+    for (const line of rows) {
+      if (!line.trim()) continue;
+      const parts = line.split(",");
+      const shape = parts[1];
+      const x = Number(parts[2]);
+      const y = Number(parts[3]);
+      if (!grouped.has(shape)) grouped.set(shape, []);
+      grouped.get(shape).push({ x, y });
+    }
+
+    const allPoints = Array.from(grouped.values()).flat();
+    const minX = Math.min(...allPoints.map(p => p.x));
+    const maxX = Math.max(...allPoints.map(p => p.x));
+    const minY = Math.min(...allPoints.map(p => p.y));
+    const maxY = Math.max(...allPoints.map(p => p.y));
+
+    const canvas = document.getElementById("plot");
+    const ctx = canvas.getContext("2d");
+    const legend = document.getElementById("legend");
+
+    const colors = [
+      "#2563eb", "#ea580c", "#16a34a", "#dc2626", "#7c3aed", "#0f766e",
+      "#a16207", "#db2777", "#4f46e5", "#0369a1", "#65a30d", "#be123c",
+      "#0891b2"
+    ];
+
+    const padLeft = 56;
+    const padRight = 20;
+    const padTop = 18;
+    const padBottom = 44;
+    const plotW = canvas.width - padLeft - padRight;
+    const plotH = canvas.height - padTop - padBottom;
+
+    const scaleX = (x) => padLeft + ((x - minX) / (maxX - minX)) * plotW;
+    const scaleY = (y) => canvas.height - padBottom - ((y - minY) / (maxY - minY)) * plotH;
+
+    function drawAxes() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 5; i++) {
+        const gx = padLeft + (i / 5) * plotW;
+        const gy = padTop + (i / 5) * plotH;
+
+        ctx.beginPath();
+        ctx.moveTo(gx, padTop);
+        ctx.lineTo(gx, canvas.height - padBottom);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(padLeft, gy);
+        ctx.lineTo(canvas.width - padRight, gy);
+        ctx.stroke();
       }
-      dataByShape[shape].push({ x: xNum, y: yNum });
-      xValues.push(xNum);
-      yValues.push(yNum);
-    });
 
-    const palette = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
-    const datasets = Object.entries(dataByShape).map(([shape, points], entryIndex) => ({
-      label: shape,
-      data: points,
-      pointRadius: 3,
-      borderWidth: 0,
-      backgroundColor: palette[entryIndex % palette.length]
-    }));
+      ctx.strokeStyle = "#334155";
+      ctx.lineWidth = 1.25;
+      ctx.beginPath();
+      ctx.moveTo(padLeft, padTop);
+      ctx.lineTo(padLeft, canvas.height - padBottom);
+      ctx.lineTo(canvas.width - padRight, canvas.height - padBottom);
+      ctx.stroke();
 
-    const ctx = document.getElementById('scatterChart');
-    new Chart(ctx, {
-      type: 'scatter',
-      data: { datasets },
-      options: {
-        maintainAspectRatio: false,
-        responsive: true,
-        scales: {
-          x: {
-            type: 'linear',
-            position: 'bottom',
-            min: Math.min(...xValues) - 1,
-            max: Math.max(...xValues) + 1,
-            title: { display: true, text: 'x' },
-            grid: { color: 'rgba(15, 23, 42, 0.08)' }
-          },
-          y: {
-            min: Math.min(...yValues) - 1,
-            max: Math.max(...yValues) + 1,
-            title: { display: true, text: 'y' },
-            grid: { color: 'rgba(15, 23, 42, 0.08)' }
-          }
-        },
-        plugins: {
-          legend: { position: 'right', labels: { boxWidth: 18, padding: 12 } },
-          tooltip: { mode: 'nearest', intersect: false }
+      ctx.fillStyle = "#334155";
+      ctx.font = "12px Segoe UI, sans-serif";
+      ctx.fillText("x", canvas.width - padRight + 6, canvas.height - padBottom + 4);
+      ctx.fillText("y", padLeft - 14, padTop - 5);
+
+      for (let i = 0; i <= 5; i++) {
+        const xVal = minX + (i / 5) * (maxX - minX);
+        const yVal = maxY - (i / 5) * (maxY - minY);
+
+        const xPos = padLeft + (i / 5) * plotW;
+        const yPos = padTop + (i / 5) * plotH;
+
+        ctx.fillStyle = "#64748b";
+        ctx.fillText(xVal.toFixed(1), xPos - 12, canvas.height - padBottom + 18);
+        ctx.fillText(yVal.toFixed(1), 8, yPos + 3);
+      }
+    }
+
+    function drawPoints() {
+      let idx = 0;
+      for (const [shape, points] of grouped.entries()) {
+        const color = colors[idx % colors.length];
+        ctx.fillStyle = color;
+
+        for (const pt of points) {
+          ctx.beginPath();
+          ctx.arc(scaleX(pt.x), scaleY(pt.y), 2.6, 0, Math.PI * 2);
+          ctx.fill();
         }
+
+        const item = document.createElement("div");
+        item.className = "legend-item";
+        item.innerHTML = `<span class="swatch" style="background:${color}"></span><span>${shape}</span>`;
+        legend.appendChild(item);
+
+        idx += 1;
       }
-    });
+    }
+
+    drawAxes();
+    drawPoints();
   </script>
 </body>
 </html>
