@@ -1,7 +1,120 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TJ's Welcome Page</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 2rem;
+      background: #fefefe;
+      color: #121212;
+    }
+
+    header {
+      border-bottom: 1px solid #dedede;
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    section {
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin: 0 0 0.25rem;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      margin: 0.6rem 0 0.5rem;
+    }
+
+    ul {
+      padding-left: 1.2rem;
+    }
+    .link-card {
+      background: #111827;
+      color: #f9fafb;
+      padding: 1.2rem;
+      border-radius: 10px;
+      display: inline-flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      max-width: 26rem;
+      text-decoration: none;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.3);
+    }
+    .link-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px rgba(15, 23, 42, 0.4);
+    }
+    .link-card strong {
+      font-size: 1.1rem;
+    }
+    .link-card span {
+      font-size: 0.9rem;
+      color: #e5e7eb;
+    }
+    .iframe-wrapper {
+      margin-top: 1rem;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+    }
+    .iframe-wrapper iframe {
+      width: 100%;
+      height: 480px;
+      border: 0;
+      display: block;
+    }
+  </style>
+</head>
 <body>
-Hi WORLD
-  The blizzard has passed!
-  TJ has made this change to the code!
+  <header>
+    <h1>Hi, WORLD!</h1>
+    <p>The blizzard has passed, and TJ has made this change to the code!</p>
+  </header>
+
+  <section>
+    <h2>What I'm Up To</h2>
+    <p>I have been digging into a few hobbies lately and balancing time between them and the projects that keep me busy.</p>
+  </section>
+
+  <section>
+    <h2>Hobbies</h2>
+    <ul>
+      <li>Urban sketching: capturing the details of the city during quick coffee breaks.</li>
+      <li>Hiking new trails near my town—last weekend's summit gave me a great sunset view.</li>
+      <li>Cooking through a playlist of global comfort foods and sharing the recipes with friends.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Explore the Datasaurus</h2>
+    <p>Check out the interactive scatterplot built from <code>datasaurus_all.csv</code>; every shape lives in the same view.</p>
+    <a class="link-card" href="datasaurus_scatter.html" target="_blank" rel="noopener">
+      <strong>Datasaurus scatterplot</strong>
+      <span>Open the standalone page with Chart.js visualization. Hover for details and use the legend to isolate each shape.</span>
+    </a>
+  </section>
+
+  <section>
+    <h2>Inline Preview</h2>
+    <p>Here’s the Datasaurus scatterplot directly on this page so you can see the curves without leaving the welcome screen.</p>
+    <div class="iframe-wrapper">
+      <iframe src="datasaurus_scatter.html" title="Datasaurus scatterplot preview"></iframe>
+    </div>
+  </section>
+
+  <section>
+    <h2>My Relationship with Takashi</h2>
+    <p>Takashi is my creative collaborator and sounding board. We trade ideas, critique work, and celebrate little wins in equal measure. Having that dependable partnership keeps the momentum going on every task, whether it's a sprint at the keyboard or planning out the next community event.</p>
+  </section>
 </body>
 </html>
